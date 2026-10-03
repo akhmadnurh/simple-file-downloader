@@ -1,0 +1,17 @@
+{
+  "name": "file-downloader",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web-based download manager with SSE progress and auto-unzip",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "node test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
