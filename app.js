@@ -532,6 +532,7 @@ var activeList = document.getElementById('activeList');
 var doneList = document.getElementById('doneList');
 var activeHead = document.getElementById('activeHead');
 var doneHead = document.getElementById('doneHead');
+var emptyBox = document.getElementById('empty');
 var confirmDlg = document.getElementById('confirmDlg');
 var confirmMsg = document.getElementById('confirmMsg');
 
@@ -761,8 +762,11 @@ document.getElementById('form').addEventListener('submit', async function (e) {
     addOrUpdate(rec);
     document.getElementById('url').value = '';
     document.getElementById('name').value = '';
-  } catch (_) {
-    errBox.textContent = 'Tidak bisa terhubung ke server';
+  } catch (e) {
+    console.error('submit error:', e);
+    errBox.textContent = e instanceof TypeError
+      ? 'Tidak bisa terhubung ke server'
+      : 'Terjadi kesalahan pada halaman: ' + e.message;
     errBox.hidden = false;
   } finally {
     btn.disabled = false;
