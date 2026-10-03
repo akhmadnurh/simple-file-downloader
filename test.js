@@ -119,7 +119,7 @@ async function main() {
   const appPort = 20000 + Math.floor(Math.random() * 20000);
 
   const child = spawn(process.execPath, ['app.js'], {
-    env: { ...process.env, PORT: String(appPort), DOWNLOAD_DIRS: DL_DIR },
+    env: { ...process.env, PORT: String(appPort), DOWNLOAD_DIRS: DL_DIR, HISTORY_FILE: path.join(TMP, 'history.jsonl') },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let childLog = '';
@@ -361,6 +361,24 @@ async function main() {
     r = await fetch(base + '/cancel/' + cId, { method: 'POST' });
     assert.strictEqual(r.status, 400, 'cancel again → 400');
     ok('cancel: state=canceled, .part removed, double-cancel=400');
+
+    // --- hide endpoint + history persistence
+    r = await fetch(base + '/downloads/' + htmlId + '/hide', { method: 'POST' });
+    assert.strictEqual(r.status, 200);
+    const listH = await (await fetch(base + '/downloads')).json();
+    assert(!listH.some(x => x.id === htmlId), 'hidden id should be gone from /downloads');
+    r = await fetch(base + '/downloads/' + htmlId + '/hide', { method: 'POST' });
+    assert.strictEqual(r.status, 200, 'double-hide still 200');
+    ok('hide: excluded from /downloads, idempotent');
+
+    const histPath = path.join(TMP, 'history.jsonl');
+    await waitFor(async () => fs.existsSync(histPath) && fs.readFileSync(histPath, 'utf8').includes('error'), 5000, 'history jsonl written');
+    assert(fs.readFileSync(histPath, 'utf8').split('\n').filter(Boolean).length >= 5, 'jsonl has terminal records');
+    let hist = await (await fetch(base + '/history-data?state=error')).json();
+    assert(hist.length >= 2 && hist.every(x => x.state === 'error'), 'history filter state=error');
+    hist = await (await fetch(base + '/history-data?q=missing')).json();
+    assert(hist.length >= 1, 'history search q=missing');
+    ok('history-data: jsonl written, state filter, search');
 
     console.log('\nALL ' + passed + ' CHECKS PASSED');
   } catch (err) {
